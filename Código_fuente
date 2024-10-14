@@ -1,0 +1,203 @@
+/* 
+*  BIOBOT - DESARROLLO DE UN ROBOT AUTÓNOMO BIOBOT” DE RESPUESTA RÁPIDA EN LA ATENCIÓN DE PACIENTES EN EL HOSPITAL SAN BERNARDO
+*  Placa: Wemos D1 - R1 seleccionar velocidad 115200; lolin(wemos D1 R1)
+* Autores: Antonio Rosas
+* Eduardo Gómez
+* Carla Wayar
+*/
+
+const int EnableA = D7;  
+const int EnableB = D8;  
+const int IN1 = D6; 
+const int IN2 = D5; 
+const int IN3 = D9; 
+const int IN4 = D10;    // Usar los pines 
+                        //digitales tales como se utilizan en el arduino uno utilizando la letra d
+
+#include <ESP8266WiFi.h>
+#include <WiFiClient.h>
+#include <ESP8266WebServer.h>
+
+String command;
+int speedCar = 1000;  // 400 - 1023.
+int speed_Coeff = 3;
+
+const char* ssid = "BIO-BOT";
+const char* password = "BIO123BOT";
+
+ESP8266WebServer server(80);
+
+void setup() {
+
+  pinMode(EnableA, OUTPUT);
+  pinMode(EnableB, OUTPUT);  
+  pinMode(IN1, OUTPUT);
+  pinMode(IN2, OUTPUT);
+  pinMode(IN3, OUTPUT);
+  pinMode(IN4, OUTPUT); 
+  
+  Serial.begin(115200);  // Cambiar la velocidad según la placa
+  
+  // Connecting WiFi
+  WiFi.mode(WIFI_AP);
+  WiFi.softAP(ssid, password);
+
+  IPAddress myIP = WiFi.softAPIP();
+  Serial.print("AP IP address: ");
+  Serial.println(myIP);
+ 
+  // Starting WEB-server 
+  server.on ( "/", HTTP_handleRoot );
+  server.onNotFound ( HTTP_handleRoot );
+  server.begin();    
+}
+
+void goAhead(){ 
+
+      digitalWrite(IN1, LOW);
+      digitalWrite(IN2, HIGH);
+      analogWrite(EnableA, speedCar);
+
+      digitalWrite(IN3, LOW);
+      digitalWrite(IN4, HIGH);
+      analogWrite(EnableB, speedCar);
+  }
+
+void goBack(){ 
+
+      digitalWrite(IN1, HIGH);
+      digitalWrite(IN2, LOW);
+      analogWrite(EnableA, speedCar);
+
+      digitalWrite(IN3, HIGH);
+      digitalWrite(IN4, LOW);
+      analogWrite(EnableB, speedCar);
+  }
+
+void goRight(){ 
+      speedCar =600;
+      digitalWrite(IN1, HIGH);
+      digitalWrite(IN2, LOW);
+      analogWrite(EnableA, speedCar);
+
+      digitalWrite(IN3, LOW);
+      digitalWrite(IN4, HIGH);
+      analogWrite(EnableB, speedCar);
+  }
+
+void goLeft(){
+      speedCar =600;
+      digitalWrite(IN1, LOW);
+      digitalWrite(IN2, HIGH);
+      analogWrite(EnableA, speedCar);
+
+      digitalWrite(IN3, HIGH);
+      digitalWrite(IN4, LOW);
+      analogWrite(EnableB, speedCar);
+  }
+
+void llamadouno(){
+      //avanza x segundos hasta la posicion del primer llamado 
+
+      digitalWrite(IN1, LOW);
+      digitalWrite(IN2, HIGH);
+      analogWrite(EnableA, speedCar);
+      digitalWrite(IN3, LOW);
+      digitalWrite(IN4, HIGH);
+      analogWrite(EnableB, speedCar);
+      delay (2000);
+// despues de 5 segundos dobla hacia la izquierda 
+      digitalWrite(IN1, LOW);
+      digitalWrite(IN2, HIGH);
+      analogWrite(EnableA, speedCar);
+      digitalWrite(IN3, HIGH);
+      digitalWrite(IN4, LOW);
+      analogWrite(EnableB, speedCar);
+      delay (3000);
+//despues de 2 segundos avanza x metros
+      digitalWrite(IN1, LOW);
+      digitalWrite(IN2, HIGH);
+      analogWrite(EnableA, speedCar);
+      digitalWrite(IN3, LOW);
+      digitalWrite(IN4, HIGH);
+      analogWrite(EnableB, speedCar);
+      delay (2000);
+   }
+
+void goAheadLeft(){
+      
+      digitalWrite(IN1, LOW);
+      digitalWrite(IN2, HIGH);
+      analogWrite(EnableA, speedCar);
+
+      digitalWrite(IN3, LOW);
+      digitalWrite(IN4, HIGH);
+      analogWrite(EnableB, speedCar/speed_Coeff);
+  }
+
+void goBackRight(){ 
+
+      digitalWrite(IN1, HIGH);
+      digitalWrite(IN2, LOW);
+      analogWrite(EnableA, speedCar/speed_Coeff);
+
+      digitalWrite(IN3, HIGH);
+      digitalWrite(IN4, LOW);
+      analogWrite(EnableB, speedCar);
+  }
+
+void goBackLeft(){ 
+
+      digitalWrite(IN1, HIGH);
+      digitalWrite(IN2, LOW);
+      analogWrite(EnableA, speedCar);
+
+      digitalWrite(IN3, HIGH);
+      digitalWrite(IN4, LOW);
+      analogWrite(EnableB, speedCar/speed_Coeff);
+  }
+
+void stopRobot(){  
+
+      digitalWrite(IN1, LOW);
+      digitalWrite(IN2, LOW);
+      analogWrite(EnableA, speedCar);
+
+      digitalWrite(IN3, LOW);
+      digitalWrite(IN4, LOW);
+      analogWrite(EnableB, speedCar);
+ }
+
+void loop() {
+    server.handleClient();
+    
+      command = server.arg("State");
+      if (command == "F") goAhead();
+      else if (command == "B") goBack();
+      else if (command == "L") goLeft();
+      else if (command == "R") goRight();
+      else if (command == "I") llamadouno();
+      else if (command == "G") goAheadLeft();
+      else if (command == "J") goBackRight();
+      else if (command == "H") goBackLeft();
+      else if (command == "0") speedCar = 400;
+      else if (command == "1") speedCar = 470;
+      else if (command == "2") speedCar = 540;
+      else if (command == "3") speedCar = 610;
+      else if (command == "4") speedCar = 680;
+      else if (command == "5") speedCar = 750;
+      else if (command == "6") speedCar = 820;
+      else if (command == "7") speedCar = 890;
+      else if (command == "8") speedCar = 960;
+      else if (command == "9") speedCar = 1023;
+      else if (command == "S") stopRobot();
+}
+
+void HTTP_handleRoot(void) {
+
+if( server.hasArg("State") ){
+       Serial.println(server.arg("State"));
+  }
+  server.send ( 200, "text/html", "" );
+delay(1);
+}
